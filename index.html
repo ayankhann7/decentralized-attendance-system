@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Decentralized Attendance System</title>
+
+    <!-- Ethers.js -->
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.5/dist/ethers.umd.min.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            min-height: 100vh;
+            color: white;
+            padding: 30px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            font-size: 34px;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            color: #cbd5e1;
+        }
+
+        .wallet-section {
+            background: #1e293b;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            text-align: center;
+            border: 1px solid #334155;
+        }
+
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 15px;
+            margin: 5px;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        .danger {
+            background: #dc2626;
+        }
+
+        .danger:hover {
+            background: #b91c1c;
+        }
+
+        .success {
+            background: #16a34a;
+        }
+
+        .success:hover {
+            background: #15803d;
+        }
+
+        .card {
+            background: #1e293b;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            border: 1px solid #334155;
+        }
+
+        .card h2 {
+            margin-bottom: 20px;
+            color: #60a5fa;
+        }
+
+        input {
+            width: 100%;
+            padding: 13px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            border: 1px solid #475569;
+            background: #0f172a;
+            color: white;
+            font-size: 15px;
+        }
+
+        input::placeholder {
+            color: #94a3b8;
+        }
+
+        .status {
+            padding: 12px;
+            margin-top: 15px;
+            border-radius: 8px;
+            background: #0f172a;
+            color: #cbd5e1;
+            word-break: break-word;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .stat-box {
+            flex: 1;
+            background: #1e293b;
+            padding: 20px;
+            text-align: center;
+            border-radius: 15px;
+            border: 1px solid #334155;
+        }
+
+        .stat-box h3 {
+            color: #94a3b8;
+            margin-bottom: 10px;
+        }
+
+        .stat-box p {
+            font-size: 30px;
+            font-weight: bold;
+            color: #60a5fa;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th,
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #334155;
+            text-align: left;
+        }
+
+        th {
+            color: #60a5fa;
+        }
+
+        td {
+            color: #e2e8f0;
+            word-break: break-all;
+        }
+
+        .present {
+            color: #4ade80;
+            font-weight: bold;
+        }
+
+        .absent {
+            color: #f87171;
+            font-weight: bold;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .owner-box {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #94a3b8;
+            word-break: break-all;
+        }
+
+        @media (max-width: 700px) {
+            body {
+                padding: 15px;
+            }
+
+            .stats {
+                flex-direction: column;
+            }
+
+            table {
+                font-size: 12px;
+            }
+
+            th,
+            td {
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <header>
+        <h1>📚 Decentralized Attendance System</h1>
+        <p>Blockchain-Based Attendance Management using Ethereum</p>
+    </header>
+
+    <!-- WALLET -->
+    <div class="wallet-section">
+
+        <button onclick="connectWallet()">
+            🦊 Connect MetaMask
+        </button>
+
+        <div id="walletStatus" class="status">
+            Wallet not connected
+        </div>
+
+        <div id="networkStatus" class="status">
+            Network: Not connected
+        </div>
+
+        <div id="ownerStatus" class="owner-box">
+            Owner status: Unknown
+        </div>
+
+    </div>
+
+
+    <!-- STATISTICS -->
+    <div class="stats">
+
+        <div class="stat-box">
+            <h3>Total Students</h3>
+            <p id="studentCount">0</p>
+        </div>
+
+        <div class="stat-box">
+            <h3>Contract</h3>
+            <p style="font-size:14px; word-break:break-all;">
+                0x23253d...FCbf6b
+            </p>
+        </div>
+
+    </div>
+
+
+    <!-- MARK ATTENDANCE -->
+    <div class="card">
+
+        <h2>📝 Mark Attendance</h2>
+
+        <input
+            type="text"
+            id="studentAddress"
+            placeholder="Enter Student Wallet Address"
+        >
+
+        <button class="success" onclick="markPresent()">
+            ✅ Mark Present
+        </button>
+
+        <button class="danger" onclick="markAbsent()">
+            ❌ Mark Absent
+        </button>
+
+        <div id="markStatus" class="status">
+            Enter a student wallet address and select attendance status.
+        </div>
+
+    </div>
+
+
+    <!-- CHECK STUDENT -->
+    <div class="card">
+
+        <h2>🔍 Check Student Attendance</h2>
+
+        <input
+            type="text"
+            id="checkAddress"
+            placeholder="Enter Student Wallet Address"
+        >
+
+        <button onclick="checkAttendance()">
+            🔍 Check Attendance
+        </button>
+
+        <div id="checkStatus" class="status">
+            Attendance information will appear here.
+        </div>
+
+    </div>
+
+
+    <!-- ALL ATTENDANCE -->
+    <div class="card">
+
+        <h2>📊 Class Attendance</h2>
+
+        <button onclick="loadClassAttendance()">
+            🔄 Load Attendance
+        </button>
+
+        <div style="overflow-x:auto;">
+
+            <table>
+
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Student Wallet</th>
+                        <th>Status</th>
+                        <th>Marked</th>
+                        <th>Timestamp</th>
+                    </tr>
+                </thead>
+
+                <tbody id="attendanceTable">
+
+                    <tr>
+                        <td colspan="5" style="text-align:center;">
+                            No attendance loaded
+                        </td>
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+    // =========================================================
+    // CONTRACT CONFIGURATION
+    // =========================================================
+
+    const CONTRACT_ADDRESS =
+        "0x23253d694Fe18FC6Ea6f95b42db852882fDCbf6b";
+
+
+    // Sepolia Chain ID
+    const SEPOLIA_CHAIN_ID = "0xaa36a7";
+
+
+    // =========================================================
+    // CONTRACT ABI
+    // =========================================================
+
+    const CONTRACT_ABI = [
+
+        // owner()
+        "function owner() view returns (address)",
+
+        // markPresent(address)
+        "function markPresent(address student)",
+
+        // markAbsent(address)
+        "function markAbsent(address student)",
+
+        // getAttendance(address)
+        "function getAttendance(address student) view returns (address,bool,bool,uint256)",
+
+        // getClassAttendance()
+        "function getClassAttendance() view returns (tuple(address student,bool present,bool marked,uint256 timestamp)[])",
+
+        // getStudentCount()
+        "function getStudentCount() view returns (uint256)"
+
+    ];
+
+
+    // =========================================================
+    // GLOBAL VARIABLES
+    // =========================================================
+
+    let provider;
+    let signer;
+    let contract;
+    let currentAccount;
+
+
+    // =========================================================
+    // CONNECT METAMASK
+    // =========================================================
+
+    async function connectWallet() {
+
+        try {
+
+            if (!window.ethereum) {
+
+                alert(
+                    "MetaMask is not installed. Please install MetaMask."
+                );
+
+                return;
+            }
+
+
+            provider = new ethers.BrowserProvider(window.ethereum);
+
+
+            // Request account
+            await provider.send(
+                "eth_requestAccounts",
+                []
+            );
+
+
+            signer = await provider.getSigner();
+
+
+            currentAccount = await signer.getAddress();
+
+
+            // Check network
+            const network = await provider.getNetwork();
+
+
+            document.getElementById("walletStatus").innerText =
+                "Connected Wallet: " + currentAccount;
+
+
+            document.getElementById("networkStatus").innerText =
+                "Network: " + network.name +
+                " | Chain ID: " + network.chainId;
+
+
+            // Check Sepolia
+            if (network.chainId !== 11155111n) {
+
+                document.getElementById("networkStatus").innerText =
+                    "⚠️ Please switch MetaMask to Sepolia network.";
+
+                alert(
+                    "Please switch MetaMask to the Sepolia network."
+                );
+
+                return;
+            }
+
+
+            // Create contract instance
+            contract = new ethers.Contract(
+                CONTRACT_ADDRESS,
+                CONTRACT_ABI,
+                signer
+            );
+
+
+            // Check owner
+            await checkOwner();
+
+
+            // Load student count
+            await loadStudentCount();
+
+
+            // Load attendance
+            await loadClassAttendance();
+
+
+        } catch (error) {
+
+            console.error(error);
+
+            document.getElementById("walletStatus").innerText =
+                "Connection failed: " + getErrorMessage(error);
+
+        }
+
+    }
+
+
+    // =========================================================
+    // CHECK OWNER
+    // =========================================================
+
+    async function checkOwner() {
+
+        try {
+
+            const owner =
+                await contract.owner();
+
+
+            if (
+                owner.toLowerCase() ===
+                currentAccount.toLowerCase()
+            ) {
+
+                document.getElementById("ownerStatus").innerText =
+                    "✅ Connected account is the CONTRACT OWNER (Teacher).";
+
+            } else {
+
+                document.getElementById("ownerStatus").innerText =
+                    "⚠️ Connected account is NOT the contract owner.";
+
+            }
+
+        } catch (error) {
+
+            console.error(error);
+
+            document.getElementById("ownerStatus").innerText =
+                "Unable to check owner.";
+
+        }
+
+    }
+
+
+    // =========================================================
+    // CHECK WALLET / CONTRACT
+    // =========================================================
+
+    async function ensureConnected() {
+
+        if (!contract) {
+
+            alert(
+                "Please connect MetaMask first."
+            );
+
+            return false;
+        }
+
+
+        const network =
+            await provider.getNetwork();
+
+
+        if (network.chainId !== 11155111n) {
+
+            alert(
+                "Please switch MetaMask to Sepolia."
+            );
+
+            return false;
+        }
+
+
+        return true;
+
+    }
+
+
+    // =========================================================
+    // MARK PRESENT
+    // =========================================================
+
+    async function markPresent() {
+
+        if (!(await ensureConnected())) {
+            return;
+        }
+
+
+        const student =
+            document.getElementById("studentAddress")
+            .value
+            .trim();
+
+
+        if (!ethers.isAddress(student)) {
+
+            alert(
+                "Please enter a valid Ethereum wallet address."
+            );
+
+            return;
+        }
+
+
+        try {
+
+            document.getElementById("markStatus").innerText =
+                "⏳ Sending transaction... Please confirm it in MetaMask.";
+
+
+            const tx =
+                await contract.markPresent(student);
+
+
+            document.getElementById("markStatus").innerText =
+                "⏳ Transaction submitted. Waiting for blockchain confirmation...";
+
+
+            await tx.wait();
+
+
+            document.getElementById("markStatus").innerText =
+                "✅ Attendance marked PRESENT successfully!\n\nTransaction Hash:\n"
+                + tx.hash;
+
+
+            await loadStudentCount();
+
+            await loadClassAttendance();
+
+
+        } catch (error) {
+
+            console.error(error);
+
+            document.getElementById("markStatus").innerText =
+                "❌ Transaction failed:\n" +
+                getErrorMessage(error);
+
+        }
+
+    }
+
+
+    // =========================================================
+    // MARK ABSENT
+    // =========================================================
+
+    async function markAbsent() {
+
+        if (!(await ensureConnected())) {
+            return;
+        }
+
+
+        const student =
+            document.getElementById("studentAddress")
+            .value
+            .trim();
+
+
+        if (!ethers.isAddress(student)) {
+
+            alert(
+                "Please enter a valid Ethereum wallet address."
+            );
+
+            return;
+        }
+
+
+        try {
+
+            document.getElementById("markStatus").innerText =
+                "⏳ Sending transaction... Please confirm it in MetaMask.";
+
+
+            const tx =
+                await contract.markAbsent(student);
+
+
+            document.getElementById("markStatus").innerText =
+                "⏳ Transaction submitted. Waiting for blockchain confirmation...";
+
+
+            await tx.wait();
+
+
+            document.getElementById("markStatus").innerText =
+                "✅ Attendance marked ABSENT successfully!\n\nTransaction Hash:\n"
+                + tx.hash;
+
+
+            await loadStudentCount();
+
+            await loadClassAttendance();
+
+
+        } catch (error) {
+
+            console.error(error);
+
+            document.getElementById("markStatus").innerText =
+                "❌ Transaction failed:\n" +
+                getErrorMessage(error);
+
+        }
+
+    }
+
+
+    // =========================================================
+    // CHECK INDIVIDUAL ATTENDANCE
+    // =========================================================
+
+    async function checkAttendance() {
+
+        if (!(await ensureConnected())) {
+            return;
+        }
+
+
+        const student =
+            document.getElementById("checkAddress")
+            .value
+            .trim();
+
+
+        if (!ethers.isAddress(student)) {
+
+            alert(
+                "Please enter a valid Ethereum wallet address."
+            );
+
+            return;
+        }
+
+
+        try {
+
+            document.getElementById("checkStatus").innerText =
+                "⏳ Reading blockchain...";
+
+
+            const result =
+                await contract.getAttendance(student);
+
+
+            const studentAddress =
+                result[0];
+
+            const present =
+                result[1];
+
+            const marked =
+                result[2];
+
+            const timestamp =
+                result[3];
+
+
+            if (!marked) {
+
+                document.getElementById("checkStatus").innerHTML =
+                    "ℹ️ Attendance has not been marked for this student.";
+
+                return;
+            }
+
+
+            const date =
+                new Date(
+                    Number(timestamp) * 1000
+                );
+
+
+            const statusText =
+                present
+                    ? "✅ PRESENT"
+                    : "❌ ABSENT";
+
+
+            document.getElementById("checkStatus").innerHTML =
+
+                "<strong>Student:</strong> " +
+                studentAddress +
+
+                "<br><br>" +
+
+                "<strong>Status:</strong> " +
+                statusText +
+
+                "<br><br>" +
+
+                "<strong>Marked Time:</strong> " +
+                date.toLocaleString();
+
+        } catch (error) {
+
+            console.error(error);
+
+            document.getElementById("checkStatus").innerText =
+                "❌ Error reading attendance:\n" +
+                getErrorMessage(error);
+
+        }
+
+    }
+
+
+    // =========================================================
+    // LOAD STUDENT COUNT
+    // =========================================================
+
+    async function loadStudentCount() {
+
+        try {
+
+            if (!contract) {
+                return;
+            }
+
+
+            const count =
+                await contract.getStudentCount();
+
+
+            document.getElementById("studentCount").innerText =
+                count.toString();
+
+        } catch (error) {
+
+            console.error(error);
+
+        }
+
+    }
+
+
+    // =========================================================
+    // LOAD CLASS ATTENDANCE
+    // =========================================================
+
+    async function loadClassAttendance() {
+
+        if (!contract) {
+
+            return;
+        }
+
+
+        try {
+
+            const records =
+                await contract.getClassAttendance();
+
+
+            const table =
+                document.getElementById("attendanceTable");
+
+
+            table.innerHTML = "";
+
+
+            if (records.length === 0) {
+
+                table.innerHTML = `
+                    <tr>
+                        <td colspan="5" style="text-align:center;">
+                            No attendance records found.
+                        </td>
+                    </tr>
+                `;
+
+                return;
+            }
+
+
+            records.forEach(
+                (record, index) => {
+
+                    const student =
+                        record.student;
+
+                    const present =
+                        record.present;
+
+                    const marked =
+                        record.marked;
+
+                    const timestamp =
+                        record.timestamp;
+
+
+                    const date =
+                        marked
+                            ? new Date(
+                                Number(timestamp) * 1000
+                              ).toLocaleString()
+                            : "-";
+
+
+                    const status =
+                        present
+                            ? '<span class="present">PRESENT</span>'
+                            : '<span class="absent">ABSENT</span>';
+
+
+                    const row =
+                        document.createElement("tr");
+
+
+                    row.innerHTML = `
+
+                        <td>${index + 1}</td>
+
+                        <td>${student}</td>
+
+                        <td>${status}</td>
+
+                        <td>
+                            ${marked ? "YES" : "NO"}
+                        </td>
+
+                        <td>${date}</td>
+
+                    `;
+
+
+                    table.appendChild(row);
+
+                }
+            );
+
+
+        } catch (error) {
+
+            console.error(error);
+
+            document.getElementById("attendanceTable").innerHTML = `
+
+                <tr>
+
+                    <td colspan="5" style="text-align:center;">
+
+                        ❌ Unable to load attendance.
+
+                    </td>
+
+                </tr>
+
+            `;
+
+        }
+
+    }
+
+
+    // =========================================================
+    // ERROR MESSAGE
+    // =========================================================
+
+    function getErrorMessage(error) {
+
+        if (!error) {
+            return "Unknown error";
+        }
+
+
+        if (
+            error.code === "ACTION_REJECTED"
+        ) {
+
+            return "Transaction was rejected in MetaMask.";
+
+        }
+
+
+        if (
+            error.reason
+        ) {
+
+            return error.reason;
+
+        }
+
+
+        if (
+            error.shortMessage
+        ) {
+
+            return error.shortMessage;
+
+        }
+
+
+        if (
+            error.message
+        ) {
+
+            return error.message;
+
+        }
+
+
+        return "Unknown error occurred.";
+
+    }
+
+
+    // =========================================================
+    // METAMASK ACCOUNT CHANGE
+    // =========================================================
+
+    if (window.ethereum) {
+
+        window.ethereum.on(
+            "accountsChanged",
+            function () {
+
+                location.reload();
+
+            }
+        );
+
+
+        window.ethereum.on(
+            "chainChanged",
+            function () {
+
+                location.reload();
+
+            }
+        );
+
+    }
+
+</script>
+
+</body>
+</html>
